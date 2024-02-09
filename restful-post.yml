@@ -1,0 +1,40 @@
+config:
+  target: https://api.restful-api.dev/
+  phases:
+    - duration: 1
+      arrivalRate: 1
+      name: restful-api.dev GET & POST
+  payload:
+    - path: "keywords.csv"
+      fields:
+        - "keyword1"
+        - "keyword2"
+      order: sequence
+  plugins:
+    ensure: {}
+  ensure:
+    thresholds:
+      - http.response_time.p95: 2000
+      - http.downloaded_bytes: 1000
+    conditions:
+      - expression: vusers.failed == 0
+      - expression: "http.request_rate >= 2 and http.response_time.max < 2200"
+      - expression: http.response_time.min < 800
+scenarios:
+  - name: Getting a resource
+    flow:
+      - get:
+          url: "{{ target }}objects"
+      - post:
+          url: "{{ target }}objects"
+          json:
+            name: "Test name"
+            data:
+              generation: "Test core i9"
+              capacity: "Test size 1TB"
+          capture:
+            - json: "$"
+              as: "request_body"
+      - log: "Json value from response is: {{ request_body }}"
+      - log: "Keyword 1: {{keyword1}}"
+      - log: "Keyword 2: {{keyword2}}"
